@@ -1,0 +1,156 @@
+/* SCSS functions and mixins */
+@use "sass:math";
+@use "sass:list";
+
+/* Functions */
+@function parseInt($n) {
+    @return math.div($n, ($n * 0 + 1)); // Replace math.plus() with direct addition
+}
+
+@function pow($number, $exp) {
+    $value: 1;
+    @if $exp > 0 {
+        @for $i from 1 through $exp {
+            $value: $value * $number;
+        }
+    }
+    @else if $exp < 0 {
+        @for $i from 1 through -$exp {
+            $value: $value / $number;
+        }
+    }
+    @return $value;
+}
+
+@function fact($number) {
+    $value: 1;
+    @if $number > 0 {
+        @for $i from 1 through $number {
+            $value: $value * $i;
+        }
+    }
+    @return $value;
+}
+
+@function pi() {
+    @return 3.14159265359;
+}
+
+@function rad($angle) {
+    $unit: math.unit($angle);
+    $unitless: math.div($angle, ($angle * 0 + 1)); // Replace math.plus() with direct addition
+    @if $unit == deg {
+        $unitless: math.div($unitless, 180) * pi();
+    }
+    @return $unitless;
+}
+
+@function sin($angle) {
+  $sin: 0;
+  $angle: rad($angle);
+  @for $i from 0 through 10 {
+      $sin: $sin + math.div(pow(-1, $i) * pow($angle, (2 * $i + 1)), fact(2 * $i + 1));
+  }
+  @return $sin;
+}
+
+@function cos($angle) {
+  $cos: 0;
+  $angle: rad($angle);
+  @for $i from 0 through 10 {
+      $cos: $cos + math.div(pow(-1, $i) * pow($angle, (2 * $i)), fact(2 * $i));
+  }
+  @return $cos;
+}
+
+
+@function tan($angle) {
+    @return sin($angle) / cos($angle);
+}
+
+@function text-3d(
+    $depth,
+    $highlight,
+    $shadow,
+    $angle,
+    $tweak: 0,
+    $dropshadow: false
+) {
+    $angle: ($angle + 90) % 360;
+    $hd: 0;
+    $sd: 0;
+    $d: parseInt($depth) - 1;
+    $u: math.unit($depth);
+    $body: ();
+
+    @for $i from 0 through $d {
+        $b: if($i > math.div($d, 2), $d - $i, $i);
+
+        $thd: $hd;
+        $hd: cos($angle) + $hd;
+        $hb: if($b < $tweak, abs($hd - $thd) * $b, abs($hd - $thd) * $tweak);
+        $body: list.append($body, #{$hd + $u} #{$sd + $u} #{$hb + $u} $highlight, comma);
+
+        $tsd: $sd;
+        $sd: sin($angle) + $sd;
+        $sb: if($b < $tweak, abs($sd - $tsd) * $b, abs($sd - $tsd) * $tweak);
+        $body: list.append($body, #{$thd + $u} #{$sd + $u} #{$sb + $u} $shadow, comma);
+    }
+
+    @return $body;
+}
+
+@mixin text-3d(
+    $depth,
+    $highlight,
+    $shadow,
+    $angle,
+    $tweak: 0
+) {
+    text-shadow: text-3d(
+      $depth,
+      $highlight,
+      $shadow,
+      $angle,
+      $tweak
+    );
+}
+
+/* Styles */
+h1, h2 {
+    margin: 0;
+    line-height: 1;
+    font-weight: 400;
+}
+
+h1 {
+    color: hsl(0, 100%, 55%);
+    font-size: 5em;
+    @include text-3d(45px, hsl(200, 100%, 15%), hsl(200, 100%, 45%), 125deg);
+    transform: extrude(45px, 125deg);
+    position: relative;
+    z-index: 1;
+}
+
+h2 {
+    color: hsl(60, 90%, 45%);
+    font-size: 2.5em;
+    @include text-3d(35px, hsl(0, 90%, 25%), hsl(0, 90%, 45%), 125deg);
+    transform: extrude(45px, 125deg);
+}
+
+body {
+    font-family: 'Bowlby One SC', sans-serif;
+    text-transform: uppercase;
+    background-color: #084a9c;
+}
+
+:root {
+    height: 100%;
+    display: flex;
+}
+
+:root > * {
+    margin: auto;
+    text-align: center;
+}
